@@ -5,5 +5,16 @@
     <RootNamespace>GodotInk</RootNamespace>
     <PublishReferencesDocumentationFiles>false</PublishReferencesDocumentationFiles>
   </PropertyGroup>
+  <PropertyGroup Condition="$(UseNewGodotBindings) == 'true'">
+    <TargetFramework>net8.0</TargetFramework>
+    <PublishAot>true</PublishAot>
+    <DisableImplicitGodotGeneratorReferences>true</DisableImplicitGodotGeneratorReferences>
+    <DisableImplicitGodotSharpReferences>true</DisableImplicitGodotSharpReferences>
+    <DefineConstants>$(DefineConstants);TOOLS;USE_NEW_GODOT_BINDINGS</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="$(UseNewGodotBindings) == 'true'">
+    <PackageReference Include="Godot.Bindings" Version="4.3.0-nightly.24204.1" />
+    <PackageReference Include="Godot.SourceGenerators" Version="4.3.0-nightly.24204.1" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
   <Import Project="addons\GodotInk\GodotInk.props" />
 </Project>

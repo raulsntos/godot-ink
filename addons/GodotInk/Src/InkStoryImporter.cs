@@ -11,13 +11,24 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 
 using DependenciesCache = System.Collections.Generic.Dictionary<string, string[]>;
+#if USE_NEW_GODOT_BINDINGS
+using Godot.Collections;
+using GArrayGictionary = Godot.Collections.GodotArray<Godot.Collections.GodotDictionary>;
+using GArrayString = Godot.Collections.GodotArray<string>;
+using Gictionary = Godot.Collections.GodotDictionary;
+#else
 using GArrayGictionary = Godot.Collections.Array<Godot.Collections.Dictionary>;
 using GArrayString = Godot.Collections.Array<string>;
 using Gictionary = Godot.Collections.Dictionary;
+#endif
 
 namespace GodotInk;
 
+#if USE_NEW_GODOT_BINDINGS
+[GodotClass(Tool = true)]
+#else
 [Tool]
+#endif
 public partial class InkStoryImporter : EditorImportPlugin
 {
     private const string OPT_MAIN_FILE = "is_main_file";
@@ -26,39 +37,93 @@ public partial class InkStoryImporter : EditorImportPlugin
     private static readonly Regex includeRegex = new(@"^\s*INCLUDE\s*(?<Path>.*)\s*$", RegexOptions.Multiline | RegexOptions.Compiled);
 
 #pragma warning disable IDE0022
-    public override string _GetImporterName() => "ink";
+#if USE_NEW_GODOT_BINDINGS
+    protected
+#else
+    public
+#endif
+    override string _GetImporterName() => "ink";
 
-    public override string _GetVisibleName() => "Ink story";
+#if USE_NEW_GODOT_BINDINGS
+    protected
+#else
+    public
+#endif
+    override string _GetVisibleName() => "Ink story";
 
+#if USE_NEW_GODOT_BINDINGS
+    protected override PackedStringArray _GetRecognizedExtensions() => ["ink"];
+#else
     public override string[] _GetRecognizedExtensions() => new string[] { "ink" };
+#endif
 
-    public override string _GetResourceType() => nameof(Resource);
+#if USE_NEW_GODOT_BINDINGS
+    protected
+#else
+    public
+#endif
+    override string _GetResourceType() => nameof(Resource);
 
-    public override string _GetSaveExtension() => "res";
+#if USE_NEW_GODOT_BINDINGS
+    protected
+#else
+    public
+#endif
+    override string _GetSaveExtension() => "res";
 
-    public override float _GetPriority() => 1.0f;
+#if USE_NEW_GODOT_BINDINGS
+    protected
+#else
+    public
+#endif
+    override float _GetPriority() => 1.0f;
 
-    public override int _GetPresetCount() => 0;
+#if USE_NEW_GODOT_BINDINGS
+    protected
+#else
+    public
+#endif
+    override int _GetPresetCount() => 0;
 
-    public override int _GetImportOrder() => 0;
+#if USE_NEW_GODOT_BINDINGS
+    protected
+#else
+    public
+#endif
+    override int _GetImportOrder() => 0;
 
-    public override GArrayGictionary _GetImportOptions(string path, int presetIndex) => new()
+#if USE_NEW_GODOT_BINDINGS
+    protected
+#else
+    public
+#endif
+    override GArrayGictionary _GetImportOptions(string path, int presetIndex) => new()
     {
         new() { { "name", OPT_MAIN_FILE }, { "default_value", false } },
         new() { { "name", OPT_COMPRESS }, { "default_value", true } }
     };
 
-    public override bool _GetOptionVisibility(string path, StringName optionName, Gictionary options) => true;
+#if USE_NEW_GODOT_BINDINGS
+    protected
+#else
+    public
+#endif
+    override bool _GetOptionVisibility(string path, StringName optionName, Gictionary options) => true;
 #pragma warning restore IDE0022
 
-    public override Error _Import(string sourceFile, string savePath, Gictionary options, GArrayString _, GArrayString __)
+#if USE_NEW_GODOT_BINDINGS
+    protected
+#else
+    public
+#endif
+    override Error _Import(string sourceFile, string savePath, Gictionary options, GArrayString _, GArrayString __)
     {
         UpdateCache(sourceFile, ExtractIncludes(sourceFile));
 
         string destFile = $"{savePath}.{_GetSaveExtension()}";
         Error returnValue = options[OPT_MAIN_FILE].AsBool()
             ? ImportFromInk(sourceFile, destFile, options[OPT_COMPRESS].AsBool())
-            : ResourceSaver.Save(new StubInkStory(), destFile);
+            : ResourceSaver.Singleton.Save(new StubInkStory(), destFile);
 
         string[] additionalFiles = GetCache().Where(kvp => kvp.Value.Contains(sourceFile)).Select(kvp => kvp.Key).ToArray();
         foreach (var additionalFile in additionalFiles)
@@ -80,7 +145,7 @@ public partial class InkStoryImporter : EditorImportPlugin
             sourceFilename = sourceFile,
             errorHandler = InkCompilerErrorHandler,
             fileHandler = new FileHandler(
-                Path.GetDirectoryName(file.GetPathAbsolute()) ?? ProjectSettings.GlobalizePath("res://")
+                Path.GetDirectoryName(file.GetPathAbsolute()) ?? ProjectSettings.Singleton.GlobalizePath("res://")
             ),
         });
 
@@ -90,7 +155,7 @@ public partial class InkStoryImporter : EditorImportPlugin
             InkStory resource = InkStory.Create(storyContent);
             ResourceSaver.SaverFlags flags = shouldCompress ? ResourceSaver.SaverFlags.Compress
                                                             : ResourceSaver.SaverFlags.None;
-            return ResourceSaver.Save(resource, destFile, flags);
+            return ResourceSaver.Singleton.Save(resource, destFile, flags);
         }
         catch (InvalidInkException)
         {
@@ -132,7 +197,7 @@ public partial class InkStoryImporter : EditorImportPlugin
         cache = cache.Where(kvp => kvp.Value.Length > 0).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
         using Godot.FileAccess file = Godot.FileAccess.Open(CACHE_FILE, Godot.FileAccess.ModeFlags.Write);
-        file?.StoreString(JsonSerializer.Serialize(cache));
+        file?.StoreString(JsonSerializer.Serialize(cache, DependenciesCacheJsonContext.DefaultTypeInfo));
     }
 
     public static DependenciesCache GetCache()
@@ -140,7 +205,7 @@ public partial class InkStoryImporter : EditorImportPlugin
         using Godot.FileAccess file = Godot.FileAccess.Open(CACHE_FILE, Godot.FileAccess.ModeFlags.Read);
         try
         {
-            return JsonSerializer.Deserialize<DependenciesCache>(file?.GetAsText() ?? "{}")
+            return JsonSerializer.Deserialize(file?.GetAsText(true) ?? "{}", DependenciesCacheJsonContext.DefaultTypeInfo)
                 ?? new DependenciesCache();
         }
         catch (JsonException)

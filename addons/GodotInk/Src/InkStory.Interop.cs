@@ -5,7 +5,13 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 
+#if USE_NEW_GODOT_BINDINGS
+using Godot.Collections;
+
+using VariantGArray = Godot.Collections.GodotArray<Godot.Variant>;
+#else
 using VariantGArray = Godot.Collections.Array<Godot.Variant>;
+#endif
 
 namespace GodotInk;
 
@@ -22,13 +28,25 @@ public partial class InkStory
     /// This method is here for GDScript compatibility. Use <see cref="CurrentChoices" /> instead.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public Godot.Collections.Array<InkChoice> GetCurrentChoices() => new(CurrentChoices);
+    public
+#if USE_NEW_GODOT_BINDINGS
+    GodotArray<InkChoice>
+#else
+    Godot.Collections.Array<InkChoice>
+#endif
+    GetCurrentChoices() => new(CurrentChoices);
 
     /// <summary>
     /// This method is here for GDScript compatibility. Use <see cref="CurrentTags" /> instead.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public Godot.Collections.Array<string> GetCurrentTags() => new(CurrentTags);
+    public
+#if USE_NEW_GODOT_BINDINGS
+    GodotArray<string>
+#else
+    Godot.Collections.Array<string>
+#endif
+    GetCurrentTags() => new(CurrentTags);
 
     /// <summary>
     /// This method is here for GDScript compatibility. Use <see cref="CurrentText" /> instead.

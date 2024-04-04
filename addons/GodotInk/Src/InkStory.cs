@@ -6,13 +6,22 @@ using System.Collections.Generic;
 
 using static GodotInk.MarshalUtils;
 
+#if USE_NEW_GODOT_BINDINGS
+using Godot.Bridge;
+using Godot.Collections;
+#else
 using PropertyList = Godot.Collections.Array<Godot.Collections.Dictionary>;
+#endif
 
 namespace GodotInk;
 
+#if USE_NEW_GODOT_BINDINGS
+// NOTE: There's no support for class icons yet in the new bindings.
+#else
 [Tool]
 #if GODOT4_1_OR_GREATER
 [GlobalClass, Icon("../GodotInk.svg")]
+#endif
 #endif
 public partial class InkStory : Resource
 {
@@ -259,7 +268,13 @@ public partial class InkStory : Resource
 
             Variant variant = ToVariant(value);
             foreach (Callable callable in callables)
-                _ = callable.Call(name, variant);
+                _ = callable.Call(
+#if USE_NEW_GODOT_BINDINGS
+                    [name, variant]
+#else
+                    name, variant
+#endif
+                );
         };
     }
 
@@ -349,7 +364,13 @@ public partial class InkStory : Resource
     /// The return value as returned from the ink function with `~ return myValue`, or a nil
     /// variant if nothing is returned.
     /// </returns>
-    public Variant EvaluateFunction(string functionName, Godot.Collections.Array<Variant> arguments)
+    public Variant EvaluateFunction(string functionName,
+#if USE_NEW_GODOT_BINDINGS
+        GodotArray<Variant> arguments
+#else
+        Godot.Collections.Array<Variant> arguments
+#endif
+    )
     {
         object? result = runtimeStory.EvaluateFunction(functionName, FromVariants(arguments));
         return ToVariant(result);
@@ -679,9 +700,48 @@ public partial class InkStory : Resource
 
     private void OnMadeChoice(Ink.Runtime.Choice choice)
     {
-        _ = EmitSignal(SignalName.MadeChoice, new InkChoice(choice));
+        _ = EmitSignal(SignalName.MadeChoice,
+#if USE_NEW_GODOT_BINDINGS
+            [new InkChoice(choice)]
+#else
+            new InkChoice(choice)
+#endif
+        );
     }
 
+#if USE_NEW_GODOT_BINDINGS
+    protected override void _GetPropertyList(IList<PropertyInfo> properties)
+    {
+        base._GetPropertyList(properties);
+
+        properties.Add(new PropertyInfo(PropertyName.RawStory, VariantType.String)
+        {
+            Usage = PropertyUsageFlags.NoEditor,
+        });
+    }
+
+    protected override bool _Set(StringName property, Variant value)
+    {
+        if (property == PropertyName.RawStory)
+        {
+            RawStory = value.AsString();
+            return true;
+        }
+
+        return base._Set(property, value);
+    }
+
+    protected override bool _Get(StringName property, out Variant value)
+    {
+        if (property == PropertyName.RawStory)
+        {
+            value = RawStory;
+            return true;
+        }
+
+        return base._Get(property, out value);
+    }
+#else
     public override PropertyList _GetPropertyList()
     {
         PropertyList properties = base._GetPropertyList() ?? new PropertyList();
@@ -695,4 +755,5 @@ public partial class InkStory : Resource
 
         return properties;
     }
+#endif
 }

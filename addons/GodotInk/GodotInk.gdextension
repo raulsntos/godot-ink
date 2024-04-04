@@ -1,0 +1,15 @@
+[configuration]
+
+entry_symbol = "godotink_library_init"
+compatibility_minimum = 4.3
+
+[libraries]
+
+linux.x86_64.debug = "res://addons/GodotInk/libgodotink.linux.template_debug.x86_64.so"
+linux.x86_64.release = "res://addons/GodotInk/libgodotink.linux.template_release.x86_64.so"
+linux.debug.arm64 = "res://addons/GodotInk/libgodotink.linux.template_debug.arm64.so"
+linux.release.arm64 = "res://addons/GodotInk/libgodotink.linux.template_release.arm64.so"
+windows.x86_64.debug = "res://addons/GodotInk/libgodotink.windows.template_debug.x86_64.dll"
+windows.x86_64.release = "res://addons/GodotInk/libgodotink.windows.template_release.x86_64.dll"
+macos.debug = "res://addons/GodotInk/libgodotink.macos.template_debug.framework"
+macos.release = "res://addons/GodotInk/libgodotink.macos.template_release.framework"

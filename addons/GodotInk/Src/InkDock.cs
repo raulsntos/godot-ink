@@ -7,10 +7,19 @@ using System.Linq;
 
 namespace GodotInk;
 
+#if USE_NEW_GODOT_BINDINGS
+[GodotClass(Tool = true)]
+#else
 [Tool]
+#endif
 public partial class InkDock : VBoxContainer
 {
-    private static readonly StringName CHOICE_INDEX_META = "Index";
+    private static readonly StringName CHOICE_INDEX_META =
+#if USE_NEW_GODOT_BINDINGS
+        StringName.CreateStaticFromAscii("Index"u8);
+#else
+        "Index";
+#endif
 
     private Button loadButton = null!;
     private Button startButton = null!;
@@ -30,7 +39,12 @@ public partial class InkDock : VBoxContainer
 
     private string backupSave = "";
 
-    public override void _Ready()
+#if USE_NEW_GODOT_BINDINGS
+    protected
+#else
+    public
+#endif
+    override void _Ready()
     {
         base._Ready();
 
@@ -48,11 +62,11 @@ public partial class InkDock : VBoxContainer
         AddChild(fileDialog);
 
         // Initialize top.
-        loadButton = GetNode<Button>("Container/Left/Top/LoadButton");
-        storyNameLabel = GetNode<Label>("Container/Left/Top/Label");
-        startButton = GetNode<Button>("Container/Left/Top/StartButton");
-        stopButton = GetNode<Button>("Container/Left/Top/StopButton");
-        clearButton = GetNode<Button>("Container/Left/Top/ClearButton");
+        loadButton = GetNode<Button>((NodePath)"Container/Left/Top/LoadButton");
+        storyNameLabel = GetNode<Label>((NodePath)"Container/Left/Top/Label");
+        startButton = GetNode<Button>((NodePath)"Container/Left/Top/StartButton");
+        stopButton = GetNode<Button>((NodePath)"Container/Left/Top/StopButton");
+        clearButton = GetNode<Button>((NodePath)"Container/Left/Top/ClearButton");
 
         // Connect UI events.
         loadButton.Pressed += () => fileDialog.PopupCenteredClamped(new Vector2I(1050, 700), 0.8f);
@@ -61,15 +75,15 @@ public partial class InkDock : VBoxContainer
         clearButton.Pressed += () => ClearStory(false);
 
         // Initialize bottom.
-        storyText = GetNode<VBoxContainer>("Container/Left/Scroll/Margin/StoryText");
-        storyChoices = GetNode<VBoxContainer>("Container/Right/StoryChoices");
-        scroll = GetNode<ScrollContainer>("Container/Left/Scroll");
+        storyText = GetNode<VBoxContainer>((NodePath)"Container/Left/Scroll/Margin/StoryText");
+        storyChoices = GetNode<VBoxContainer>((NodePath)"Container/Right/StoryChoices");
+        scroll = GetNode<ScrollContainer>((NodePath)"Container/Left/Scroll");
 
         // Set icons.
-        loadButton.Icon = GetThemeIcon("Load", "EditorIcons");
-        startButton.Icon = GetThemeIcon("Play", "EditorIcons");
-        stopButton.Icon = GetThemeIcon("Stop", "EditorIcons");
-        clearButton.Icon = GetThemeIcon("Clear", "EditorIcons");
+        loadButton.Icon = GetThemeIcon((StringName)"Load", (StringName)"EditorIcons");
+        startButton.Icon = GetThemeIcon((StringName)"Play", (StringName)"EditorIcons");
+        stopButton.Icon = GetThemeIcon((StringName)"Stop", (StringName)"EditorIcons");
+        clearButton.Icon = GetThemeIcon((StringName)"Clear", (StringName)"EditorIcons");
 
         // Update UI.
         UpdateTop();
@@ -94,7 +108,8 @@ public partial class InkDock : VBoxContainer
         try
         {
             storyPath = path;
-            story = ResourceLoader.Load<InkStory>(path, null, ResourceLoader.CacheMode.Ignore);
+            var res = ResourceLoader.Singleton.Load(path);
+            story = (InkStory)ResourceLoader.Singleton.Load(path);
 
             UpdateTop();
         }
@@ -172,7 +187,7 @@ public partial class InkDock : VBoxContainer
                     HorizontalAlignment = HorizontalAlignment.Center,
                     Text = $"# {string.Join(", ", story.CurrentTags)}",
                 };
-                newLine.AddThemeColorOverride("font_color", GetThemeColor("font_color_disabled", "Button"));
+                newLine.AddThemeColorOverride((StringName)"font_color", GetThemeColor((StringName)"font_color_disabled", (StringName)"Button"));
                 AddToStory(newLine);
             }
         }
@@ -228,8 +243,8 @@ public partial class InkDock : VBoxContainer
     private async void AddToStory(CanvasItem item)
     {
         storyText.AddChild(item);
-        await ToSignal(GetTree(), "process_frame");
-        await ToSignal(GetTree(), "process_frame");
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         scroll.ScrollVertical = (int)scroll.GetVScrollBar().MaxValue;
     }
 

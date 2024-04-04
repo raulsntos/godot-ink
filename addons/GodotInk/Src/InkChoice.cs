@@ -5,9 +5,13 @@ using System.Collections.Generic;
 
 namespace GodotInk;
 
+#if USE_NEW_GODOT_BINDINGS
+[GodotClass(Tool = true)]
+#else
 [Tool]
 #if GODOT4_1_OR_GREATER
 [GlobalClass]
+#endif
 #endif
 public partial class InkChoice : RefCounted
 {

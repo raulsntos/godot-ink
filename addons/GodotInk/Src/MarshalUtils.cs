@@ -42,18 +42,18 @@ public static class MarshalUtils
     /// <exception cref="ArgumentException"></exception>
     public static object? FromVariant(Variant variant)
     {
-        return variant.VariantType switch
+        return (VariantType)variant.VariantType switch
         {
-            Variant.Type.Bool => variant.AsBool(),
+            VariantType.Bool => variant.AsBool(),
 
-            Variant.Type.Int => variant.AsInt32(),
-            Variant.Type.Float => variant.AsSingle(),
+            VariantType.Int => variant.AsInt32(),
+            VariantType.Float => variant.AsSingle(),
 
-            Variant.Type.String => variant.AsString(),
+            VariantType.String => variant.AsString(),
 
-            Variant.Type.Nil => null,
+            VariantType.Nil => null,
 
-            _ => throw new ArgumentException($"Argument of type {variant.Obj?.GetType()} is not valid."),
+            _ => throw new ArgumentException($"Argument of type {variant.AsSystemObject()?.GetType()} is not valid."),
         };
     }
 
